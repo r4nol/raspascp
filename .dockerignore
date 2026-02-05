@@ -6,3 +6,4 @@ artifacts
 .env.*
 *.log
 .DS_Store
+siem
