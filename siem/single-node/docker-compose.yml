@@ -86,8 +86,6 @@ services:
       - "traefik.http.routers.siem.tls.certresolver=le"
       - "traefik.http.services.siem.loadbalancer.server.port=5601"
       - "traefik.http.services.siem.loadbalancer.server.scheme=https"
-      - "traefik.http.services.siem.loadbalancer.serverstransport=siem-insecure"
-      - "traefik.http.serverstransports.siem-insecure.insecureSkipVerify=true"
     expose:
       - "5601"
     environment:
