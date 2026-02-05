@@ -15,9 +15,11 @@ services:
       APP_PORT: 8080
       SECURITY_LOG_DIR: /var/log/app
       APP_MODE: fixed
+    volumes:
+      - security_logs:/var/log/app
     tmpfs:
       - /tmp
-      - /var/log/app:mode=0777
+    user: "0:0"
     cap_drop:
       - ALL
     security_opt:
@@ -28,3 +30,7 @@ services:
 networks:
   global_network:
     external: true
+
+volumes:
+  security_logs:
+    name: security_logs

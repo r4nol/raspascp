@@ -1,0 +1,31 @@
+<group name="ascp,">
+  <rule id="100100" level="2">
+    <decoded_as>json</decoded_as>
+    <field name="data.@source">ascp</field>
+    <description>ASCP security event</description>
+  </rule>
+
+  <rule id="100110" level="10">
+    <if_sid>100100</if_sid>
+    <field name="data.event_type">idor_attempt</field>
+    <description>ASCP IDOR attempt detected</description>
+  </rule>
+
+  <rule id="100111" level="7">
+    <if_sid>100100</if_sid>
+    <field name="data.event_type">idor_block</field>
+    <description>ASCP IDOR blocked by runtime guard</description>
+  </rule>
+
+  <rule id="100112" level="3">
+    <if_sid>100100</if_sid>
+    <field name="data.event_type">account_access</field>
+    <description>ASCP account access</description>
+  </rule>
+
+  <rule id="100120" level="12">
+    <if_sid>100100</if_sid>
+    <field name="data.event_type">hook_error</field>
+    <description>ASCP runtime hook error</description>
+  </rule>
+</group>
