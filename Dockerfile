@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM python:3.12-slim AS builder
+FROM python:3.12-slim-bookworm AS builder
 WORKDIR /build
 
 COPY . /build
@@ -12,7 +12,7 @@ RUN python -m venv /opt/venv \
          echo "[builder] No app/requirements.txt found. Skipping dependency install."; \
        fi
 
-FROM python:3.12-slim AS runtime
+FROM python:3.12-slim-bookworm AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
