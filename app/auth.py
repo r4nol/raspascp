@@ -80,3 +80,12 @@ def logout():
     )
 
     return jsonify({"message": "logged out"}), 200
+
+
+def setup_auth(app):
+    """
+    Register auth blueprint on the app.
+    Kept for compatibility with earlier integration code.
+    """
+    app.register_blueprint(auth_bp)
+    return app

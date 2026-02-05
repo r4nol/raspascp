@@ -32,6 +32,7 @@ jobs:
       - name: Gitleaks scan
         run: |
           echo "[gitleaks] Running scan"
+          mkdir -p artifacts
           docker run --rm \
             -v "$PWD:/repo" \
             -w /repo \
@@ -39,7 +40,16 @@ jobs:
             --source=/repo \
             --config=/repo/.gitleaks.toml \
             --no-banner \
+            --report-format json \
+            --report-path /repo/artifacts/gitleaks.json \
             --exit-code=1
+
+      - name: Upload gitleaks report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report
+          path: artifacts/gitleaks.json
 
       - name: Build image
         run: |

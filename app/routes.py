@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, session, current_app, request
+from flask import Blueprint, jsonify, session, current_app, request, g
 import logging
 
 api_bp = Blueprint("api", __name__)
@@ -19,6 +19,17 @@ ACCOUNTS = {
         "balance": 3200.50
     }
 }
+
+
+def set_accounts(accounts):
+    """Override in-memory accounts store (demo only)."""
+    global ACCOUNTS
+    ACCOUNTS = accounts or {}
+
+
+def get_account_by_id(account_id):
+    """Helper for security hook / other modules."""
+    return ACCOUNTS.get(account_id)
 
 
 def _unauthorized():
@@ -53,6 +64,7 @@ def get_account(account_id):
     app_mode = current_app.config.get("APP_MODE", "vuln")
 
     owner_mismatch = account["owner_user_id"] != user_id
+    g.owner_mismatch = owner_mismatch
 
     # --- FIXED MODE: enforce authorization ---
     if app_mode == "fixed":
@@ -93,3 +105,16 @@ def get_account(account_id):
         "iban": account["iban"],
         "balance": account["balance"]
     }), 200
+
+
+def setup_routes(app, accounts=None, get_account_func=None):
+    """
+    Register API blueprint on the app.
+    Allows overriding accounts for demos/tests.
+    """
+    if accounts is not None:
+        set_accounts(accounts)
+    if get_account_func is not None:
+        app.config["GET_ACCOUNT_FUNC"] = get_account_func
+    app.register_blueprint(api_bp)
+    return app
