@@ -1,0 +1,16 @@
+services:
+  app:
+    build:
+      context: .
+    image: ascp-app:dev
+    ports:
+      - "8080:8080"
+    environment:
+      APP_PORT: 8080
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true

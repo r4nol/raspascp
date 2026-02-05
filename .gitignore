@@ -1,0 +1,6 @@
+artifacts/
+.cosign/
+.env
+.env.*
+.DS_Store
+*.log

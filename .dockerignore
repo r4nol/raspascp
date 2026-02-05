@@ -1,0 +1,8 @@
+.git
+.github
+artifacts
+.cosign
+.env
+.env.*
+*.log
+.DS_Store
