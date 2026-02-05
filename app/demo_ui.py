@@ -234,6 +234,25 @@ def demo_events():
     return jsonify({"events": events})
 
 
+@demo_bp.route("/api/demo/mode", methods=["POST"])
+def demo_mode():
+    access_check = _require_demo_access()
+    if access_check:
+        return access_check
+
+    payload = request.get_json(silent=True) or {}
+    mode = (
+        request.args.get("mode")
+        or request.form.get("mode")
+        or payload.get("mode")
+    )
+    if mode not in ("vuln", "fixed"):
+        return jsonify({"error": "invalid_mode"}), 400
+
+    _safe_set_mode(mode)
+    return jsonify({"mode": current_app.config.get("APP_MODE", "vuln")})
+
+
 @demo_bp.route("/api/demo/run", methods=["POST"])
 def demo_run():
     access_check = _require_demo_access()

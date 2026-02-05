@@ -425,6 +425,15 @@
       document.getElementById("mode-fixed").classList.toggle("btn-outline-secondary", mode !== "fixed");
     }
 
+    async function applyMode(mode) {
+      setMode(mode);
+      try {
+        await fetch(`/api/demo/mode?mode=${mode}`, { method: "POST" });
+      } catch (err) {
+        statusEl.textContent = "Unable to update mode.";
+      }
+    }
+
     function riskBadge(score) {
       const label = (score || "-").toString();
       const lower = label.toLowerCase();
@@ -548,8 +557,8 @@
       await fetchStatus();
     }
 
-    document.getElementById("mode-vuln").addEventListener("click", () => setMode("vuln"));
-    document.getElementById("mode-fixed").addEventListener("click", () => setMode("fixed"));
+    document.getElementById("mode-vuln").addEventListener("click", () => applyMode("vuln"));
+    document.getElementById("mode-fixed").addEventListener("click", () => applyMode("fixed"));
     document.getElementById("run-single").addEventListener("click", () => runDemo("single"));
     document.getElementById("run-burst").addEventListener("click", () => runDemo("burst"));
     document.getElementById("run-reset").addEventListener("click", resetDemo);

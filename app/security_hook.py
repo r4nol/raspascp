@@ -60,6 +60,7 @@ class SecurityContext:
         self.method = request.method
         self.client_ip = request.remote_addr
         self.user_agent = request.headers.get("User-Agent", "")
+        self.app_mode = None
 
         self.is_suspicious = False
         self.violation_type = None
@@ -133,17 +134,22 @@ class SecurityHook:
         self.logger = setup_security_logger()
         self.rules_engine = RulesEngine(get_account_func)
 
-        app_config = getattr(self.app, "config", {}) or {}
-        self.app_mode = app_config.get("APP_MODE") or os.getenv("APP_MODE", "vuln")
+        self.app_mode = self._get_app_mode()
 
         if getattr(self.app, "logger", None):
             self.app.logger.info(f"Security Hook initialized in {self.app_mode} mode")
+
+    def _get_app_mode(self):
+        app_config = getattr(self.app, "config", {}) or {}
+        return app_config.get("APP_MODE") or os.getenv("APP_MODE", "vuln")
 
     def before_request_handler(self):
         try:
             g.request_start_time = time.time()
             context = SecurityContext()
             g.security_context = context
+            context.app_mode = self._get_app_mode()
+            self.app_mode = context.app_mode
 
             if not self._should_analyze(context):
                 return None
@@ -167,7 +173,7 @@ class SecurityHook:
                 context.confidence = risk_assessment["confidence"]
                 context.top_feature = risk_assessment.get("top_feature", "none")
 
-                if self.app_mode == "fixed":
+                if context.app_mode == "fixed":
                     context.decision = "block"
                     self._emit_security_event(context, resource_id, "idor_block")
                     return {
@@ -256,7 +262,7 @@ class SecurityHook:
             "resource_id": resource_id,
             "decision": context.decision,
             "reason": context.reason,
-            "app_mode": self.app_mode,
+            "app_mode": context.app_mode or self.app_mode,
             "client_ip": context.client_ip,
             "user_agent": context.user_agent,
             "risk_score": context.risk_score,
