@@ -136,6 +136,110 @@ jobs:
           sarif_file: artifacts/trivy.sarif
           category: trivy
 
+      - name: Security reports summary
+        if: always()
+        env:
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          summary_path = os.environ["GITHUB_STEP_SUMMARY"]
+
+          def write(line=""):
+              with open(summary_path, "a", encoding="utf-8") as handle:
+                  handle.write(line + "\n")
+
+          write("## Security Reports")
+
+          # --- Gitleaks ---
+          gitleaks_path = Path("artifacts/gitleaks.json")
+          write("### Gitleaks")
+          if gitleaks_path.exists():
+              with gitleaks_path.open("r", encoding="utf-8") as handle:
+                  data = json.load(handle)
+              if isinstance(data, dict) and "leaks" in data:
+                  findings = data.get("leaks") or []
+              elif isinstance(data, list):
+                  findings = data
+              else:
+                  findings = []
+
+              total = len(findings)
+              write(f"- Total findings: **{total}**")
+              if total:
+                  counts = {}
+                  examples = {}
+                  for finding in findings:
+                      rule_id = finding.get("RuleID", "unknown")
+                      counts[rule_id] = counts.get(rule_id, 0) + 1
+                      if rule_id not in examples:
+                          file_path = finding.get("File", "")
+                          line = finding.get("StartLine", "")
+                          examples[rule_id] = f"{file_path}:{line}" if file_path else ""
+
+                  top = sorted(counts.items(), key=lambda item: item[1], reverse=True)[:10]
+                  write("")
+                  write("<details><summary>Top rules</summary>")
+                  write("")
+                  write("| Rule | Count | Example |")
+                  write("| --- | ---: | --- |")
+                  for rule_id, count in top:
+                      write(f"| `{rule_id}` | {count} | {examples.get(rule_id, '')} |")
+                  write("</details>")
+          else:
+              write("- Report not found.")
+
+          # --- Trivy ---
+          trivy_sarif_path = Path("artifacts/trivy.sarif")
+          write("")
+          write("### Trivy")
+          if trivy_sarif_path.exists():
+              with trivy_sarif_path.open("r", encoding="utf-8") as handle:
+                  sarif = json.load(handle)
+              results = []
+              for run in sarif.get("runs", []):
+                  results.extend(run.get("results", []) or [])
+              total = len(results)
+              write(f"- Total vulnerabilities: **{total}**")
+
+              if total:
+                  severity_counts = {}
+                  for result in results:
+                      props = result.get("properties") or {}
+                      severity = props.get("severity") or props.get("Severity") or result.get("level") or "unknown"
+                      severity = str(severity).lower()
+                      severity_counts[severity] = severity_counts.get(severity, 0) + 1
+
+                  if severity_counts:
+                      write("")
+                      write("| Severity | Count |")
+                      write("| --- | ---: |")
+                      for sev, count in sorted(severity_counts.items(), key=lambda item: item[0]):
+                          write(f"| `{sev}` | {count} |")
+          else:
+              write("- SARIF report not found.")
+
+          trivy_table_path = Path("artifacts/trivy.txt")
+          if trivy_table_path.exists():
+              content = trivy_table_path.read_text(encoding="utf-8", errors="ignore").strip().splitlines()
+              preview = "\n".join(content[:200])
+              write("")
+              write("<details><summary>Trivy table (first 200 lines)</summary>")
+              write("")
+              write("```")
+              write(preview)
+              write("```")
+              write("</details>")
+
+          write("")
+          run_url = os.environ.get("RUN_URL")
+          if run_url:
+              write(f"Full run: {run_url}")
+          PY
+
       - name: Install cosign
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         uses: sigstore/cosign-installer@v3
