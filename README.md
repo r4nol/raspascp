@@ -39,6 +39,18 @@ Notes:
 - The service exposes `8080` only to Traefik (no host port published).
 - For local-only runs without Traefik, temporarily add `ports: ["8080:8080"]` to `docker-compose.yml`.
 
+## SIEM stack (Traefik)
+Wazuh Dashboard is exposed on `siem.r4nol.dev`.
+
+Steps:
+1. Ensure Traefik + `global_network` are running.
+2. `docker compose -f siem/single-node/docker-compose.yml up -d`
+3. Open `https://siem.r4nol.dev/`
+
+Notes:
+- The dashboard serves HTTPS on port 5601; Traefik is configured to skip backend cert verification.
+- Wazuh manager/indexer keep their default ports for agent/API use.
+
 ## Local usage
 
 Prereqs:

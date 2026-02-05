@@ -84,6 +84,9 @@ def _record_timeline(step):
 def _safe_set_mode(mode):
     if mode in ("vuln", "fixed"):
         current_app.config["APP_MODE"] = mode
+        hook = current_app.extensions.get("security_hook") if hasattr(current_app, "extensions") else None
+        if hook is not None:
+            hook.app_mode = mode
 
 
 def _run_idor_sequence(requests_count=1):
