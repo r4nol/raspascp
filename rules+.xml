@@ -1,0 +1,15 @@
+<group name="flask_ml_security,">
+  <rule id="100001" level="12">
+    <decoded_as>json</decoded_as>
+    <field name="risk_intelligence.risk_score">high</field>
+    <description>ML Alert: Detected High Risk Attack! Confidence: $(risk_intelligence.confidence)</description>
+    <mitre>
+      <id>T1595</id> </mitre>
+  </rule>
+
+  <rule id="100002" level="7">
+    <decoded_as>json</decoded_as>
+    <field name="risk_intelligence.risk_score">medium</field>
+    <description>ML Warning: Medium risk potential IDOR attempt detected.</description>
+  </rule>
+</group>
