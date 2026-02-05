@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM python:3.12-slim-bookworm AS builder
+FROM python:3.12-alpine AS builder
 WORKDIR /build
 
 COPY . /build
@@ -12,7 +12,7 @@ RUN python -m venv /opt/venv \
          echo "[builder] No app/requirements.txt found. Skipping dependency install."; \
        fi
 
-FROM python:3.12-slim-bookworm AS runtime
+FROM python:3.12-alpine AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -20,13 +20,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-ARG DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update \
-    && apt-get upgrade -y --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/* \
-    && groupadd --system app \
-    && useradd --system --gid app --create-home --home-dir /home/app app
+RUN addgroup -S app \
+    && adduser -S -G app -h /home/app app
 
 COPY --from=builder /opt/venv /opt/venv
 COPY --from=builder /build /app
