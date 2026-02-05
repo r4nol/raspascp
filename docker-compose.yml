@@ -3,14 +3,28 @@ services:
     build:
       context: .
     image: ascp-app:dev
-    ports:
-      - "8080:8080"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ascp.rule=Host(`ascp.r4nol.dev`)"
+      - "traefik.http.routers.ascp.entrypoints=websecure"
+      - "traefik.http.routers.ascp.tls.certresolver=le"
+      - "traefik.http.services.ascp.loadbalancer.server.port=8080"
+    expose:
+      - "8080"
     environment:
       APP_PORT: 8080
+      SECURITY_LOG_DIR: /var/log/app
     read_only: true
     tmpfs:
       - /tmp
+      - /var/log/app:mode=0777
     cap_drop:
       - ALL
     security_opt:
       - no-new-privileges:true
+    networks:
+      - global_network
+
+networks:
+  global_network:
+    external: true

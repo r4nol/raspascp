@@ -10,6 +10,35 @@ This repository provides the **Secure Supply Chain** baseline for ASCP. The goal
 **One command to run**
 - `docker compose up --build` or `make up`
 
+## Demo UI (Landing + Control Plane)
+Start the app and open:
+- `http://localhost:8080/` (Landing)
+- `http://localhost:8080/demo` (Live Demo Control Plane)
+
+Optional environment variables:
+- `APP_MODE` = `vuln` or `fixed`
+- `DEMO_ACCESS_CODE` (prompt required on `/demo` if set)
+- `SECURITY_LOG_DIR` (defaults to `/var/log/app`)
+- `SLACK_WEBHOOK_URL` (shown as configured in UI if set)
+
+## Deploy to server (Traefik)
+This compose is pre-wired for Traefik with host `ascp.r4nol.dev`.
+
+Prereqs:
+- Traefik is running with `websecure` entrypoint + `le` certresolver.
+- External docker network exists: `global_network`.
+
+Steps:
+1. `git clone <repo>`
+2. `cd raspascp`
+3. `export DEMO_ACCESS_CODE="your-code"` (optional)
+4. `docker compose up --build -d`
+5. Open `https://ascp.r4nol.dev/`
+
+Notes:
+- The service exposes `8080` only to Traefik (no host port published).
+- For local-only runs without Traefik, temporarily add `ports: ["8080:8080"]` to `docker-compose.yml`.
+
 ## Local usage
 
 Prereqs:

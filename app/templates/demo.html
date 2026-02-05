@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ASCP Demo Control Plane</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    :root {
+      --ascp-ink: #0f1d2e;
+      --ascp-muted: #5b6b7c;
+      --ascp-accent: #1a73e8;
+      --ascp-accent-2: #15a98b;
+      --ascp-warning: #f6b352;
+      --ascp-danger: #e1524a;
+      --ascp-bg: #f6f8fb;
+      --ascp-card: #ffffff;
+      --ascp-border: #e3e8ef;
+    }
+
+    body {
+      font-family: "Inter", system-ui, -apple-system, Segoe UI, sans-serif;
+      color: var(--ascp-ink);
+      background: radial-gradient(1200px 600px at 0% -10%, rgba(26, 115, 232, 0.12), transparent 60%),
+                  radial-gradient(900px 500px at 90% 0%, rgba(21, 169, 139, 0.12), transparent 55%),
+                  var(--ascp-bg);
+      min-height: 100vh;
+    }
+
+    .page-header {
+      padding: 24px 0 12px;
+    }
+
+    .page-title {
+      font-weight: 700;
+      font-size: clamp(1.8rem, 3vw, 2.4rem);
+    }
+
+    .subtitle {
+      color: var(--ascp-muted);
+    }
+
+    .card-surface {
+      background: var(--ascp-card);
+      border: 1px solid var(--ascp-border);
+      border-radius: 16px;
+      padding: 20px 22px;
+      box-shadow: 0 18px 36px rgba(15, 29, 46, 0.06);
+      height: 100%;
+    }
+
+    .btn-primary {
+      background: var(--ascp-accent);
+      border-color: var(--ascp-accent);
+      border-radius: 12px;
+      font-weight: 600;
+      padding: 10px 18px;
+      box-shadow: 0 12px 24px rgba(26, 115, 232, 0.2);
+    }
+
+    .btn-outline-secondary {
+      border-radius: 12px;
+    }
+
+    .mode-toggle .btn {
+      border-radius: 999px;
+      font-weight: 600;
+      padding: 6px 16px;
+    }
+
+    .timeline {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 12px;
+    }
+
+    .timeline-item {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+
+    .timeline-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--ascp-border);
+      background: #fff;
+      margin-top: 4px;
+    }
+
+    .timeline-item.active .timeline-dot {
+      background: linear-gradient(120deg, var(--ascp-accent), var(--ascp-accent-2));
+      border-color: transparent;
+    }
+
+    .timeline-item .timeline-title {
+      font-weight: 600;
+    }
+
+    .timeline-item .timeline-meta {
+      color: var(--ascp-muted);
+      font-size: 0.85rem;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(26, 115, 232, 0.08);
+      color: var(--ascp-accent);
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .risk-badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .risk-low {
+      background: rgba(21, 169, 139, 0.16);
+      color: #0d6b57;
+    }
+
+    .risk-medium {
+      background: rgba(246, 179, 82, 0.2);
+      color: #8a5800;
+    }
+
+    .risk-high {
+      background: rgba(225, 82, 74, 0.18);
+      color: #8a1f1a;
+    }
+
+    .table thead th {
+      color: var(--ascp-muted);
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid var(--ascp-border);
+    }
+
+    .table tbody td {
+      vertical-align: middle;
+      font-size: 0.9rem;
+    }
+
+    .mono {
+      font-family: "SFMono-Regular", ui-monospace, Menlo, monospace;
+      font-size: 0.82rem;
+      color: var(--ascp-muted);
+    }
+
+    .fade-in {
+      opacity: 0;
+      transform: translateY(10px);
+      animation: fadeInUp 0.6s ease forwards;
+    }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .page-header {
+        text-align: left;
+      }
+
+      .table-responsive {
+        border: 1px solid var(--ascp-border);
+        border-radius: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-4">
+    <header class="page-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div>
+        <div class="status-pill"><span class="status-dot"></span> Live Demo Control Plane</div>
+        <h1 class="page-title mt-2">Adaptive Security Control Plane</h1>
+        <p class="subtitle mb-0">Attack to alert in one flow. Run a controlled IDOR attempt and watch the system respond.</p>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="/" class="btn btn-outline-secondary">Back to Landing</a>
+      </div>
+    </header>
+
+    <div class="row g-4 mt-2">
+      <div class="col-12 col-lg-5">
+        <section class="card-surface fade-in">
+          <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+            <div>
+              <h2 class="h5 mb-1">Scenario Runner</h2>
+              <p class="subtitle">Drive the demo with two clicks. Toggle vuln or fixed mode before running.</p>
+            </div>
+            <div class="mode-toggle btn-group" role="group" aria-label="Mode toggle">
+              <button class="btn btn-sm btn-outline-secondary" id="mode-vuln" data-mode="vuln">Vuln</button>
+              <button class="btn btn-sm btn-outline-secondary" id="mode-fixed" data-mode="fixed">Fixed</button>
+            </div>
+          </div>
+
+          <div class="d-grid gap-2 mt-3">
+            <button class="btn btn-primary" id="run-single">Run IDOR attempt (single)</button>
+            <button class="btn btn-outline-secondary" id="run-burst">Run IDOR burst (3 requests / 10s)</button>
+            <button class="btn btn-outline-secondary" id="run-reset">Reset demo state</button>
+          </div>
+
+          <div class="mt-3">
+            <div class="mono" id="run-status">Ready.</div>
+          </div>
+        </section>
+      </div>
+
+      <div class="col-12 col-lg-7">
+        <section class="card-surface fade-in" style="animation-delay: 0.08s;">
+          <h2 class="h5 mb-3">Live Timeline</h2>
+          <ul class="timeline" id="timeline">
+            <li class="timeline-item" data-step="login">
+              <span class="timeline-dot"></span>
+              <div>
+                <div class="timeline-title">Login as User A</div>
+                <div class="timeline-meta">Session established for the demo actor.</div>
+              </div>
+            </li>
+            <li class="timeline-item" data-step="request">
+              <span class="timeline-dot"></span>
+              <div>
+                <div class="timeline-title">Request User B resource</div>
+                <div class="timeline-meta">IDOR attempt against /api/accounts/&lt;id&gt;.</div>
+              </div>
+            </li>
+            <li class="timeline-item" data-step="decision">
+              <span class="timeline-dot"></span>
+              <div>
+                <div class="timeline-title">Decision allow or block</div>
+                <div class="timeline-meta">Runtime hook enforces policy in fixed mode.</div>
+              </div>
+            </li>
+            <li class="timeline-item" data-step="risk">
+              <span class="timeline-dot"></span>
+              <div>
+                <div class="timeline-title">Risk score assigned</div>
+                <div class="timeline-meta">ML inference flags suspicious access.</div>
+              </div>
+            </li>
+            <li class="timeline-item" data-step="siem">
+              <span class="timeline-dot"></span>
+              <div>
+                <div class="timeline-title">SIEM or Slack alert</div>
+                <div class="timeline-meta">Visible if the integration is configured.</div>
+              </div>
+            </li>
+          </ul>
+        </section>
+      </div>
+    </div>
+
+    <div class="row g-4 mt-1">
+      <div class="col-12">
+        <section class="card-surface fade-in" style="animation-delay: 0.12s;">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+              <h2 class="h5 mb-1">Security Events</h2>
+              <p class="subtitle mb-0">Live JSONL events emitted by the runtime hook.</p>
+            </div>
+            <div class="mono" id="event-count">0 events</div>
+          </div>
+          <div class="table-responsive mt-3">
+            <table class="table table-sm mb-0" id="events-table">
+              <thead>
+                <tr>
+                  <th>timestamp</th>
+                  <th>event</th>
+                  <th>decision</th>
+                  <th>risk</th>
+                  <th>confidence</th>
+                  <th>user</th>
+                  <th>role</th>
+                  <th>endpoint</th>
+                  <th>resource</th>
+                  <th>request</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <div class="col-12 col-lg-6">
+        <section class="card-surface fade-in" style="animation-delay: 0.16s;">
+          <h2 class="h5 mb-3">Raw JSON</h2>
+          <details>
+            <summary class="subtitle">Show last events</summary>
+            <pre class="mono mt-3" id="raw-json" style="max-height: 320px; overflow:auto;"></pre>
+          </details>
+        </section>
+      </div>
+
+      <div class="col-12 col-lg-6">
+        <section class="card-surface fade-in" style="animation-delay: 0.2s;">
+          <h2 class="h5 mb-3">Integrations Status</h2>
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="p-3 border rounded-3" style="border-color: var(--ascp-border);">
+                <div class="mono">App</div>
+                <div class="fw-semibold" id="status-app">checking</div>
+                <div class="subtitle" id="status-app-help"></div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="p-3 border rounded-3" style="border-color: var(--ascp-border);">
+                <div class="mono">ML</div>
+                <div class="fw-semibold" id="status-ml">checking</div>
+                <div class="subtitle" id="status-ml-help"></div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="p-3 border rounded-3" style="border-color: var(--ascp-border);">
+                <div class="mono">SIEM</div>
+                <div class="fw-semibold" id="status-siem">checking</div>
+                <div class="subtitle" id="status-siem-help"></div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="p-3 border rounded-3" style="border-color: var(--ascp-border);">
+                <div class="mono">Slack</div>
+                <div class="fw-semibold" id="status-slack">checking</div>
+                <div class="subtitle" id="status-slack-help"></div>
+              </div>
+            </div>
+          </div>
+          <div class="subtitle mt-3">
+            Tip: if SIEM is running, check OpenSearch indices like <span class="mono">wazuh-alerts-*</span>.
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      mode: "vuln",
+      timeline: {},
+      lastEvents: []
+    };
+
+    const statusEl = document.getElementById("run-status");
+    const eventCountEl = document.getElementById("event-count");
+    const rawJsonEl = document.getElementById("raw-json");
+    const tableBody = document.querySelector("#events-table tbody");
+
+    function setMode(mode) {
+      state.mode = mode;
+      document.getElementById("mode-vuln").classList.toggle("btn-primary", mode === "vuln");
+      document.getElementById("mode-vuln").classList.toggle("btn-outline-secondary", mode !== "vuln");
+      document.getElementById("mode-fixed").classList.toggle("btn-primary", mode === "fixed");
+      document.getElementById("mode-fixed").classList.toggle("btn-outline-secondary", mode !== "fixed");
+    }
+
+    function riskBadge(score) {
+      const label = (score || "-").toString();
+      const lower = label.toLowerCase();
+      let cls = "risk-low";
+      if (lower === "high") cls = "risk-high";
+      if (lower === "medium") cls = "risk-medium";
+      return `<span class="risk-badge ${cls}">${label}</span>`;
+    }
+
+    function renderEvents(events) {
+      state.lastEvents = events;
+      eventCountEl.textContent = `${events.length} events`;
+      tableBody.innerHTML = events.map(event => {
+        const timestamp = event.timestamp || "-";
+        const eventType = event.event_type || "-";
+        const decision = event.decision || "-";
+        const risk = riskBadge(event.risk_score);
+        const confidence = event.confidence !== undefined ? Number(event.confidence).toFixed(2) : "-";
+        const userId = event.user_id !== undefined ? event.user_id : "-";
+        const role = event.role || "-";
+        const endpoint = event.endpoint || "-";
+        const resourceId = event.resource_id !== undefined ? event.resource_id : "-";
+        const requestId = event.request_id ? event.request_id.slice(0, 8) : "-";
+        return `<tr>
+          <td class="mono">${timestamp}</td>
+          <td>${eventType}</td>
+          <td>${decision}</td>
+          <td>${risk}</td>
+          <td>${confidence}</td>
+          <td>${userId}</td>
+          <td>${role}</td>
+          <td class="mono">${endpoint}</td>
+          <td>${resourceId}</td>
+          <td class="mono">${requestId}</td>
+        </tr>`;
+      }).join("");
+
+      rawJsonEl.textContent = events.map(event => JSON.stringify(event)).join("\n");
+    }
+
+    function updateTimeline(timeline) {
+      const steps = document.querySelectorAll(".timeline-item");
+      steps.forEach(step => {
+        const key = step.dataset.step;
+        const active = timeline && timeline[key];
+        step.classList.toggle("active", Boolean(active));
+        const meta = step.querySelector(".timeline-meta");
+        if (meta && active) {
+          meta.textContent = `Done at ${active}`;
+        }
+      });
+    }
+
+    function updateStatus(status) {
+      if (!status) return;
+      document.getElementById("status-app").textContent = status.app.state;
+      document.getElementById("status-app-help").textContent = status.app.message || "";
+
+      document.getElementById("status-ml").textContent = status.ml.state;
+      document.getElementById("status-ml-help").textContent = status.ml.message || "";
+
+      document.getElementById("status-siem").textContent = status.siem.state;
+      document.getElementById("status-siem-help").textContent = status.siem.message || "";
+
+      document.getElementById("status-slack").textContent = status.slack.state;
+      document.getElementById("status-slack-help").textContent = status.slack.message || "";
+
+      if (status.app.app_mode) {
+        setMode(status.app.app_mode);
+      }
+
+      updateTimeline(status.timeline || {});
+    }
+
+    async function fetchStatus() {
+      try {
+        const response = await fetch("/api/demo/status");
+        if (!response.ok) return;
+        const data = await response.json();
+        updateStatus(data);
+      } catch (err) {
+        statusEl.textContent = "Unable to fetch status.";
+      }
+    }
+
+    async function fetchEvents() {
+      try {
+        const response = await fetch("/api/demo/events?limit=100");
+        if (!response.ok) return;
+        const data = await response.json();
+        renderEvents(data.events || []);
+      } catch (err) {
+        statusEl.textContent = "Unable to fetch events.";
+      }
+    }
+
+    async function runDemo(type) {
+      statusEl.textContent = "Running demo scenario...";
+      const response = await fetch(`/api/demo/run?type=${type}&mode=${state.mode}`, { method: "POST" });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        statusEl.textContent = payload.error || "Demo run failed.";
+        return;
+      }
+      const data = await response.json();
+      statusEl.textContent = data.message || "Scenario complete.";
+      updateTimeline(data.timeline || {});
+      await fetchEvents();
+    }
+
+    async function resetDemo() {
+      statusEl.textContent = "Resetting demo...";
+      const response = await fetch("/api/demo/reset", { method: "POST" });
+      if (!response.ok) {
+        statusEl.textContent = "Reset failed.";
+        return;
+      }
+      statusEl.textContent = "Demo state cleared.";
+      await fetchEvents();
+      await fetchStatus();
+    }
+
+    document.getElementById("mode-vuln").addEventListener("click", () => setMode("vuln"));
+    document.getElementById("mode-fixed").addEventListener("click", () => setMode("fixed"));
+    document.getElementById("run-single").addEventListener("click", () => runDemo("single"));
+    document.getElementById("run-burst").addEventListener("click", () => runDemo("burst"));
+    document.getElementById("run-reset").addEventListener("click", resetDemo);
+
+    setMode(state.mode);
+    fetchStatus();
+    fetchEvents();
+    setInterval(fetchEvents, 4000);
+    setInterval(fetchStatus, 8000);
+  </script>
+</body>
+</html>

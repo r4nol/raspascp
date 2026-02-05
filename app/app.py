@@ -5,6 +5,7 @@ from logging_conf import configure_logging
 from auth import setup_auth
 from routes import setup_routes, get_account_by_id
 from security_hook import register_security_hooks
+from demo_ui import setup_demo_ui
 
 
 def create_app():
@@ -17,6 +18,7 @@ def create_app():
 
     setup_auth(app)
     setup_routes(app)
+    setup_demo_ui(app)
 
     app.config["GET_ACCOUNT_FUNC"] = get_account_by_id
     register_security_hooks(app, get_account_func=get_account_by_id)
