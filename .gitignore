@@ -4,3 +4,4 @@ artifacts/
 .env.*
 .DS_Store
 *.log
+siem/single-node/config/wazuh_indexer_ssl_certs/
